@@ -29,6 +29,8 @@ contract('SupplyChain', function(accounts) {
 
     it("Testing smart contract function harvestItem() that allows a farmer to harvest coffee", async() => {
         let supplyChain = await SupplyChain.deployed();
+        
+        await supplyChain.addFarmer(originFarmerID);
 
         // Mark an item as Harvested by calling function harvestItem()
         let tx = await supplyChain.harvestItem(upc, 
@@ -37,7 +39,7 @@ contract('SupplyChain', function(accounts) {
             originFarmInformation, 
             originFarmLatitude, 
             originFarmLongitude, 
-            productNotes)
+            productNotes, {from: originFarmerID})
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         const item = await supplyChain.fetchItem(upc)
@@ -61,7 +63,7 @@ contract('SupplyChain', function(accounts) {
         const supplyChain = await SupplyChain.deployed()        
 
         // Mark an item as Processed by calling function processtItem()
-        let tx = await supplyChain.processItem(upc);
+        let tx = await supplyChain.processItem(upc, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         const item = await supplyChain.fetchItem(upc)
@@ -78,7 +80,7 @@ contract('SupplyChain', function(accounts) {
         const supplyChain = await SupplyChain.deployed()        
 
         // Mark an item as Processed by calling function processtItem()
-        let tx = await supplyChain.packItem(upc);
+        let tx = await supplyChain.packItem(upc, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         const item = await supplyChain.fetchItem(upc)
@@ -92,10 +94,10 @@ contract('SupplyChain', function(accounts) {
 
     // 4th Test
     it("Testing smart contract function sellItem() that allows a farmer to sell coffee", async() => {
-        const supplyChain = await SupplyChain.deployed()        
+        const supplyChain = await SupplyChain.deployed()
 
         // Mark an item as Processed by calling function processtItem()
-        let tx = await supplyChain.sellItem(upc, productPrice);
+        let tx = await supplyChain.sellItem(upc, productPrice, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         const item = await supplyChain.fetchItem(upc)
@@ -103,7 +105,7 @@ contract('SupplyChain', function(accounts) {
         // Verify the result set
         assert.equal(item[1], upc, 'Error: Invalid item UPC')
         assert.equal(item[2], 3, 'Error: Invalid item State')
-        assert.equal(item[9], productPrice, 'Error: Invalid item State')
+        assert.equal(item[9], productPrice, 'Error: Invalid item price')
 
         truffleAssert.eventEmitted(tx, 'ForSale', (ev) => {return ev.upc.toNumber() === upc;});
     })    
@@ -111,22 +113,34 @@ contract('SupplyChain', function(accounts) {
     // 5th Test
     it("Testing smart contract function buyItem() that allows a distributor to buy coffee", async() => {
         const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Sold()
-        var event = supplyChain.Sold()
-        
 
+        await supplyChain.addDistributor(distributorID);
+
+        // Get balances before buying
+        let farmer_balance_before = parseInt(await web3.eth.getBalance(originFarmerID));
+        let distributor_balance_before = parseInt(await web3.eth.getBalance(distributorID));
+        
         // Mark an item as Sold by calling function buyItem()
-        
+        let tx = await supplyChain.buyItem(upc, {from: distributorID, value: web3.utils.toWei("2", "ether")});
 
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
+        // Get balances after buying
+        let farmer_balance_after = parseInt(await web3.eth.getBalance(originFarmerID));
+        let distributor_balance_after = parseInt(await web3.eth.getBalance(distributorID));
         
+        // Retrieve the just now saved item from blockchain by calling function fetchItem()
+        const item = await supplyChain.fetchItem(upc)
 
         // Verify the result set
-        
+        assert.equal(item[1], upc, 'Error: Invalid item UPC')
+        assert.equal(item[2], 4, 'Error: Invalid item State')
+        assert.equal(item[3], distributorID, 'Error: Missing or Invalid ownerID')
+        assert.equal(item[10], distributorID, 'Error: Invalid item distributorID')
+
+        // Verify the balance
+        assert.equal(farmer_balance_before, (farmer_balance_after - parseInt(productPrice)), 'Error: Invalid farmer balance')
+        assert(distributor_balance_before > (distributor_balance_after + parseInt(productPrice)), 'Error: Invalid distributor balance')
+
+        truffleAssert.eventEmitted(tx, 'Sold', (ev) => {return ev.upc.toNumber() === upc;});        
     })    
 
     // 6th Test
