@@ -96,7 +96,7 @@ contract('SupplyChain', function(accounts) {
     it("Testing smart contract function sellItem() that allows a farmer to sell coffee", async() => {
         const supplyChain = await SupplyChain.deployed()
 
-        // Mark an item as Processed by calling function processtItem()
+        // Mark an item as Processed by calling function sellItem()
         let tx = await supplyChain.sellItem(upc, productPrice, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
@@ -134,7 +134,6 @@ contract('SupplyChain', function(accounts) {
         assert.equal(item[1], upc, 'Error: Invalid item UPC')
         assert.equal(item[2], 4, 'Error: Invalid item State')
         assert.equal(item[3], distributorID, 'Error: Missing or Invalid ownerID')
-        assert.equal(item[10], distributorID, 'Error: Invalid item distributorID')
 
         // Verify the balance
         assert.equal(farmer_balance_before, (farmer_balance_after - parseInt(productPrice)), 'Error: Invalid farmer balance')
@@ -146,61 +145,55 @@ contract('SupplyChain', function(accounts) {
     // 6th Test
     it("Testing smart contract function shipItem() that allows a distributor to ship coffee", async() => {
         const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Shipped()
-        
 
-        // Mark an item as Sold by calling function buyItem()
-        
+        let tx = await supplyChain.shipItem(upc, {from: distributorID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
+        const item = await supplyChain.fetchItem(upc)
 
         // Verify the result set
-              
+        assert.equal(item[1], upc, 'Error: Invalid item UPC')
+        assert.equal(item[2], 5, 'Error: Invalid item State')
+
+        truffleAssert.eventEmitted(tx, 'Shipped', (ev) => {return ev.upc.toNumber() === upc;});
     })    
 
     // 7th Test
     it("Testing smart contract function receiveItem() that allows a retailer to mark coffee received", async() => {
         const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Received()
-        
 
-        // Mark an item as Sold by calling function buyItem()
+        await supplyChain.addRetailer(retailerID);
         
+        let tx = await supplyChain.receiveItem(upc, {from: retailerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
+        const item = await supplyChain.fetchItem(upc)
         
-
         // Verify the result set
-             
+        assert.equal(item[1], upc, 'Error: Invalid item UPC')
+        assert.equal(item[2], 6, 'Error: Invalid item State')
+        assert.equal(item[3], retailerID, 'Error: Missing or Invalid ownerID')
+        
+        truffleAssert.eventEmitted(tx, 'Received', (ev) => {return ev.upc.toNumber() === upc;});
     })    
 
     // 8th Test
     it("Testing smart contract function purchaseItem() that allows a consumer to purchase coffee", async() => {
         const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Purchased()
-        
 
-        // Mark an item as Sold by calling function buyItem()
+        await supplyChain.addConsumer(consumerID);
         
-
+        let tx = await supplyChain.purchaseItem(upc, {from: consumerID});
+        
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
+        const item = await supplyChain.fetchItem(upc)
         
-
         // Verify the result set
-        
+        assert.equal(item[1], upc, 'Error: Invalid item UPC')
+        assert.equal(item[2], 7, 'Error: Invalid item State')
+        assert.equal(item[3], consumerID, 'Error: Missing or Invalid ownerID')
+
+        truffleAssert.eventEmitted(tx, 'Purchased', (ev) => {return ev.upc.toNumber() === upc;});
     })    
 
     // 9th Test
@@ -208,21 +201,19 @@ contract('SupplyChain', function(accounts) {
         const supplyChain = await SupplyChain.deployed()
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
-        
-        // Verify the result set:
-        
-    })
-
-    // 10th Test
-    it("Testing smart contract function fetchItemBufferTwo() that allows anyone to fetch item details from blockchain", async() => {
-        const supplyChain = await SupplyChain.deployed()
-
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
+        const item = await supplyChain.fetchItem(upc)
         
         // Verify the result set:
-        
+        assert.equal(item[0], sku, 'Error: Invalid item SKU')
+        assert.equal(item[1], upc, 'Error: Invalid item UPC')
+        assert.equal(item[2], 7, 'Error: Invalid item State')
+        assert.equal(item[3], consumerID, 'Error: Missing or Invalid ownerID')
+        assert.equal(item[4], originFarmerID, 'Error: Missing or Invalid originFarmerID')
+        assert.equal(item[5], originFarmName, 'Error: Missing or Invalid originFarmName')
+        assert.equal(item[6], originFarmInformation, 'Error: Missing or Invalid originFarmInformation')
+        assert.equal(item[7], originFarmLatitude, 'Error: Missing or Invalid originFarmLatitude')
+        assert.equal(item[8], originFarmLongitude, 'Error: Missing or Invalid originFarmLongitude')    
+        assert.equal(item[9], productPrice, 'Error: Invalid item price') 
     })
 
 });
