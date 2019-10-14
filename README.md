@@ -17,7 +17,7 @@
  - web3: 1.2.1
  
 ### UML Documents
- - Activity
+ - [Activity](docs/SupplyChain%20-%20Activity.png)
  - [Sequence](docs/SupplyChain%20-%20Sequence.png)
  - State
  - Class
