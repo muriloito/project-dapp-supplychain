@@ -18,6 +18,6 @@
  
 ### UML Documents
  - Activity
- - Sequence
+ - [Sequence](docs/SupplyChain%20-%20Sequence.png)
  - State
  - Class
