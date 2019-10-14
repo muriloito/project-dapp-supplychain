@@ -20,4 +20,4 @@
  - [Activity](docs/SupplyChain%20-%20Activity.png)
  - [Sequence](docs/SupplyChain%20-%20Sequence.png)
  - [State](docs/SupplyChain%20-%20State.png)
- - Class
+ - [Class](docs/SupplyChain%20-%20Class%20Diagram.png)
